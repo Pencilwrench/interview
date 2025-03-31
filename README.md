@@ -70,27 +70,14 @@ The project includes migrations that automatically create test data:
 - 5 projects with varying statuses and dates
 - Multiple tasks per project with random assignments
 
-## For Interviewers
-
-This project is designed to be used as a starting point for technical interviews. Some suggested exercises:
-
-- Add new API endpoints
-- Implement filtering and sorting
-- Add authentication and permissions
-- Extend the data model
-- Add unit tests
-- Implement task dependencies
-- Add project/task statistics
-
 ## For Candidates
 
 When working with this project:
 
 1. Take time to understand the existing code structure
 2. Follow the established patterns and conventions
-3. Consider edge cases in your implementations
-4. Document any significant changes or additions
-5. Write clean, maintainable code
+3. Document any significant changes or additions
+4. Write clean, maintainable code
 
 ## License
 
