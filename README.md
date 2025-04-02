@@ -11,13 +11,13 @@ The project implements a basic project management system with the following feat
 - RESTful API endpoints
 - Pre-populated test data
 
-## Questions / Challenges
+## Questions
 
-- How would you optimize the tasks list endpoint?
-- How would you customize the task admin page?
-- Ensure due date on the task model does not allow past dates
-- Protect a project from being deleted if it has tasks
-- Introduce a Team model. A user can belong to multiple teams. Project tasks must be assigned to a team member.
+- The task list api needs optimization. How would you change implement it?
+- How would you ensure due date on the task model does not allow past dates?
+- How would you protect a project from being deleted if it has tasks?
+- Look at the Team model in models.py. How would you prevent a user from being assigned to a task that is not in their team?
+- Look at TeamAdmin in admin.py. How would you help your staff to avoid assigning non team members to tasks, without relying on your previous question's solution?
 
 ## Technical Stack
 
