@@ -13,7 +13,7 @@ The project implements a basic project management system with the following feat
 
 ## Questions
 
-- The task list api needs optimization. How would you change implement it?
+- The task list api needs optimization. How would you implement it?
 - How would you ensure due date on the task model does not allow past dates?
 - How would you protect a project from being deleted if it has tasks?
 - Look at the Team model in models.py. How would you prevent a user from being assigned to a task that is not in their team?
