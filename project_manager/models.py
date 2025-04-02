@@ -31,14 +31,3 @@ class Task(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.status}"
-
-    def clean(self):
-        if self.due_date < self.project.start_date:
-            raise ValidationError("Due date cannot be before project start date")
-        if self.due_date > self.project.end_date:
-            raise ValidationError("Due date cannot be after project end date")
-        if self.assigned_to not in self.project.team.members.all():
-            raise ValidationError("Assigned user must be a member of the project's team")
-
-        
-        
