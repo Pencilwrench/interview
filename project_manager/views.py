@@ -1,18 +1,25 @@
+from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.throttling import UserRateThrottle
+import logging
 
 from core.api.serializers import BaseListOutputSerializer
-from .serializers import ProjectSerializer, TaskSerializer, BulkTaskAssignmentSerializer
-from .services import ProjectsReadService, TasksReadService
-from .models import Task
+from .serializers import (
+    ProjectSerializer,
+    TaskSerializer,
+    BulkTaskAssignmentInputSerializer,
+    BulkTaskAssignmentOutputSerializer
+)
+from .services import ProjectsReadService, TasksReadService, TaskAssignmentService
+
+
+logger = logging.getLogger(__name__)
 
 
 class ProjectListAPIView(APIView):
-
     class ProjectListOutputSerializer(BaseListOutputSerializer):
         items = ProjectSerializer(many=True)
 
@@ -23,7 +30,6 @@ class ProjectListAPIView(APIView):
 
 
 class TaskListAPIView(APIView):
-
     class TaskListOutputSerializer(BaseListOutputSerializer):
         items = TaskSerializer(many=True)
 
@@ -34,26 +40,68 @@ class TaskListAPIView(APIView):
 
 
 class BulkTaskAssignmentView(APIView):
-    def post(self, request):
-        serializer = BulkTaskAssignmentSerializer(data=request.data)
-        if serializer.is_valid():
-            task_ids = serializer.validated_data['task_ids']
-            user_id = serializer.validated_data['user_id']
-            
+    """
+    API endpoint for assigning multiple tasks to a user at once.
+    
+    Requires authentication and appropriate permissions.
+    Rate limited to prevent abuse.
+    """
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle]
+    
+    def post(self, request) -> Response:
+        """
+        Assign multiple tasks to a user.
+        
+        Request body should contain:
+        - task_ids: List of task IDs to assign
+        - user_id: ID of the user to assign tasks to
+        
+        Returns:
+        - 200: Tasks successfully assigned
+        - 400: Invalid input data
+        - 401: Not authenticated
+        - 403: Permission denied
+        - 429: Too many requests
+        """
+        # Validate input
+        input_serializer = BulkTaskAssignmentInputSerializer(data=request.data)
+        input_serializer.is_valid(raise_exception=True)
+        
+        try:
             # Get user
-            user = get_object_or_404(User, id=user_id)
+            user = User.objects.get(id=input_serializer.validated_data['user_id'])
             
-            # Update all tasks
-            tasks = []
-            for task_id in task_ids:
-                task = Task.objects.get(id=task_id)
-                task.assigned_to = user
-                task.save()
-                tasks.append(task)
+            # Perform assignment
+            result = TaskAssignmentService().bulk_assign(
+                task_ids=input_serializer.validated_data['task_ids'],
+                user=user
+            )
             
-            # Return updated tasks
-            return Response({
-                'message': f'Successfully assigned {len(tasks)} tasks to {user.username}',
-                'tasks': TaskSerializer(tasks, many=True).data
-            })
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # Log success
+            logger.info(
+                "User %s assigned %d tasks to %s",
+                request.user.username,
+                result.total_updated,
+                user.username
+            )
+            
+            # Return response
+            output_data = BulkTaskAssignmentOutputSerializer.get_output_data(result)
+            return Response(output_data, status=status.HTTP_200_OK)
+            
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'User not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.error(
+                "Error in bulk task assignment: %s",
+                str(e),
+                exc_info=True
+            )
+            return Response(
+                {'error': 'Internal server error'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

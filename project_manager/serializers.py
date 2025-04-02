@@ -1,7 +1,9 @@
 from rest_framework import serializers
+from django.contrib.auth.models import User
 
 from core.api.serializers import BaseSerializer
-from .models import Project
+from .models import Project, Task
+from .services import BulkTaskAssignmentResult
 
 
 class UserSerializer(BaseSerializer):
@@ -39,6 +41,37 @@ class TaskSerializer(BaseSerializer):
     status = serializers.CharField()
 
 
-class BulkTaskAssignmentSerializer(serializers.Serializer):
-    task_ids = serializers.ListField(child=serializers.IntegerField())
-    user_id = serializers.IntegerField()
+class BulkTaskAssignmentInputSerializer(serializers.Serializer):
+    """
+    Serializer for bulk task assignment input.
+    """
+    task_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        min_length=1,
+        help_text="List of task IDs to assign"
+    )
+    user_id = serializers.IntegerField(
+        help_text="ID of the user to assign tasks to"
+    )
+
+    def validate_user_id(self, value):
+        """Validate user exists."""
+        try:
+            User.objects.get(id=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User does not exist")
+        return value
+
+
+class BulkTaskAssignmentOutputSerializer(BaseSerializer):
+    """
+    Serializer for bulk task assignment response.
+    """
+    items = TaskSerializer(source='tasks', many=True)
+    metadata = serializers.SerializerMethodField()
+
+    def get_metadata(self, result: BulkTaskAssignmentResult) -> dict:
+        return {
+            'total_updated': result.total_updated,
+            'assignee': result.assignee.username
+        }
