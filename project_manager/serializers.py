@@ -38,3 +38,7 @@ class TaskSerializer(BaseSerializer):
     due_date = serializers.DateField()
     status = serializers.CharField()
 
+
+class BulkTaskAssignmentSerializer(serializers.Serializer):
+    task_ids = serializers.ListField(child=serializers.IntegerField())
+    user_id = serializers.IntegerField()
