@@ -54,14 +54,6 @@ class BulkTaskAssignmentInputSerializer(serializers.Serializer):
         help_text="ID of the user to assign tasks to"
     )
 
-    def validate_user_id(self, value):
-        """Validate user exists."""
-        try:
-            User.objects.get(id=value)
-        except User.DoesNotExist:
-            raise serializers.ValidationError("User does not exist")
-        return value
-
 
 class BulkTaskAssignmentOutputSerializer(BaseSerializer):
     """
@@ -74,4 +66,13 @@ class BulkTaskAssignmentOutputSerializer(BaseSerializer):
         return {
             'total_updated': result.total_updated,
             'assignee': result.assignee.username
+        }
+
+    @classmethod
+    def get_output_data(cls, result: BulkTaskAssignmentResult) -> dict:
+        """Get the formatted output data."""
+        serializer = cls(result)
+        return {
+            'items': serializer.data['items'],
+            'metadata': serializer.get_metadata(result)
         }

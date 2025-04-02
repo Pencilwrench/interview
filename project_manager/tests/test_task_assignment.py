@@ -106,6 +106,7 @@ class TaskAssignmentTests(APITestCase):
         })
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("cannot be assigned to tasks in teams", response.data['error'])
     
     def test_bulk_assign_nonexistent_task(self):
         """Test assigning nonexistent task."""
@@ -116,6 +117,7 @@ class TaskAssignmentTests(APITestCase):
         })
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("One or more tasks do not exist", response.data['error'])
     
     def test_bulk_assign_nonexistent_user(self):
         """Test assigning to nonexistent user."""
@@ -126,6 +128,7 @@ class TaskAssignmentTests(APITestCase):
         })
         
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['error'], 'User not found')
     
     def test_bulk_assign_empty_tasks(self):
         """Test assigning empty task list."""
@@ -136,3 +139,4 @@ class TaskAssignmentTests(APITestCase):
         })
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("task_ids", response.data['error'])
